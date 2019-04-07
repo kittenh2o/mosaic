@@ -3,20 +3,34 @@ import cv2.cv2 as cv2
 
 
 class Image:
-    def __init__(self, uri: str):
-        self.__img = imageio.imread(uri)
+    def __init__(self, uri: str = None, data=None):
+        self._img = None
+        self._uri = uri
+
+        if uri:
+            self._img = imageio.imread(uri)
+        elif data is not None:
+            self._img = data
 
     def get_data(self):
-        return self.__img
+        return self._img
 
     def set_data(self, data):
-        self.__img = data
+        self._img = data
+
+    def reload(self, data=None):
+        if self._uri:
+            self._img = imageio.imread(self._uri)
+        elif data is not None:
+            self.set_data(data)
+        else:
+            raise KeyError
 
     def width(self) -> int:
-        return self.__img.shape[1]
+        return self._img.shape[1]
 
     def height(self) -> int:
-        return self.__img.shape[0]
+        return self._img.shape[0]
 
     def size(self) -> int:
         return self.width() * self.height()
@@ -42,10 +56,15 @@ class ImageProcessor:
 
     @classmethod
     def diff(cls, image1: Image, image2: Image) -> int:
-        rgb1 = cls.eval_rgb(image1)
         rgb2 = cls.eval_rgb(image2)
 
-        return (rgb1['r'] - rgb2['r']) ** 2 + (rgb1['g'] - rgb2['g']) ** 2 + (rgb1['b'] - rgb2['b']) ** 2
+        return cls.diff_with_rgb(image1, rgb2)
+
+    @classmethod
+    def diff_with_rgb(cls, image: Image, rgb: dict) -> int:
+        calc_res = cls.eval_rgb(image)
+
+        return (calc_res['r'] - rgb['r']) ** 2 + (calc_res['g'] - rgb['g']) ** 2 + (calc_res['b'] - rgb['b']) ** 2
 
     @classmethod
     def resize(cls, image: Image, size: tuple = None, ratio: tuple = None) -> None:
@@ -61,14 +80,8 @@ class ImageProcessor:
                 interp_strategy = cv2.INTER_AREA
             else:
                 interp_strategy = cv2.INTER_CUBIC
-            image.set_data(cv2.resize(src=image.get_data(), dsize=(0, 0), fx=ratio[0], fy=ratio[1], interpolation=interp_strategy))
+            image.set_data(
+                cv2.resize(src=image.get_data(), dsize=(0, 0), fx=ratio[0], fy=ratio[1], interpolation=interp_strategy))
 
         else:
             raise KeyError
-
-class Tiles:
-    def __init__(self, images: list):
-        pass
-
-    def resize(self, image: Image):
-        pass
