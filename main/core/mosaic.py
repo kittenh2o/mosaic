@@ -5,6 +5,7 @@ from main.core.tiles import TileResource
 
 
 class Mosaic:
+    ''' Main module for converting image into mosaic'''
     def __init__(self, uri: str):
         self.original_image = Image(uri)
         self.tile_library = TileResource()
@@ -17,7 +18,8 @@ class Mosaic:
         for uri in uris:
             self.add_tile(uri)
 
-    def prepare_resources(self, tile_size: tuple = None):
+    def _prepare_resources(self, tile_size: tuple = None):
+        """ enlarge/shrink tiles to the given or default size and adjust original image accordingly"""
         if tile_size:
             self.tile_size = tile_size
 
@@ -31,14 +33,16 @@ class Mosaic:
             new_h = h - diff_h + self.tile_size[1]
             ImageProcessor.resize(image=self.original_image, size=(new_w, new_h))
 
-    def find_best_tile(self, segment: Image) -> Image:
+    def _find_best_tile(self, segment: Image) -> Image:
+        """ find the best fitted tile to the given segment of image"""
         min_ind = numpy.argmin(
             [ImageProcessor.diff_with_rgb(segment, rgb) for rgb in self.tile_library.tiles_rgb]
         )
 
         return self.tile_library.library[min_ind]
 
-    def match(self) -> list:
+    def _match(self) -> list:
+        """ match original image with tiles"""
         result = list()
         t_w, t_h = self.tile_size[0], self.tile_size[1]
 
@@ -49,18 +53,19 @@ class Mosaic:
             for j in range(nh):
                 w_start, h_start = i * t_w, j * t_h
                 segment = Image(data=self.original_image.img[h_start:h_start + t_h, w_start:w_start + t_w])
-                matched_tile = self.find_best_tile(segment)
+                matched_tile = self._find_best_tile(segment)
                 result.append(Component(image=matched_tile, w_start=w_start, h_start=h_start))
 
         return result
 
-    def create(self, components: list) -> Image:
+    def _create(self, components: list) -> Image:
         for component in components:
             ImageProcessor.replace(self.original_image, component)
 
         return self.original_image
 
-    def make_mosaic(self, tile_size: tuple = None):
-        self.prepare_resources(tile_size)
-        components = self.match()
-        return self.create(components)
+    def make_mosaic(self, tile_size: tuple = None) -> Image:
+        """ Interface for users to call"""
+        self._prepare_resources(tile_size)
+        components = self._match()
+        return self._create(components)

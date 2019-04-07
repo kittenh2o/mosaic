@@ -1,6 +1,8 @@
 import imageio
 import cv2.cv2 as cv2
 
+''' Entity definition and processing utilities'''
+
 
 class Image:
     def __init__(self, uri: str = None, data=None):
@@ -40,6 +42,7 @@ class Component:
 class ImageProcessor:
     @classmethod
     def eval_rgb(cls, image: Image) -> dict:
+        """ evaluate a image and return the average rgb dict"""
         r_sum = g_sum = b_sum = 0
         for col in image.img:
             for pixel in col:
@@ -57,18 +60,21 @@ class ImageProcessor:
 
     @classmethod
     def diff(cls, image1: Image, image2: Image) -> int:
+        """ calculate the difference between two images"""
         rgb2 = cls.eval_rgb(image2)
 
         return cls.diff_with_rgb(image1, rgb2)
 
     @classmethod
     def diff_with_rgb(cls, image: Image, rgb: dict) -> int:
+        """ calculate the difference between an image with an RGB dict"""
         calc_res = cls.eval_rgb(image)
 
         return (calc_res['r'] - rgb['r']) ** 2 + (calc_res['g'] - rgb['g']) ** 2 + (calc_res['b'] - rgb['b']) ** 2
 
     @classmethod
     def resize(cls, image: Image, size: tuple = None, ratio: tuple = None) -> None:
+        """ shrink/enlarge an image using desired size or ratio"""
         if size is not None:
             if size[0] < image.width() and size[1] < image.height():
                 interp_strategy = cv2.INTER_AREA
@@ -88,6 +94,7 @@ class ImageProcessor:
 
     @classmethod
     def replace(cls, image: Image, component: Component):
+        """ partially replace a image with a component tile"""
         h_start = component.h_start
         h_end = h_start + component.image.height()
         w_start = component.w_start
