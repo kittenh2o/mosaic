@@ -88,9 +88,9 @@ class ImageProcessor:
 
     @classmethod
     def replace(cls, image: Image, component: Component):
-        for rel_w in range(component.image.width()):
-            for rel_h in range(component.image.height()):
-                abs_w = rel_w + component.w_start
-                abs_h = rel_h + component.h_start
-                for i in range(3):
-                    image.img[abs_h, abs_w, i] = component.image.img[rel_h, rel_w, i]
+        h_start = component.h_start
+        h_end = h_start + component.image.height()
+        w_start = component.w_start
+        w_end = w_start + component.image.width()
+
+        image.img[h_start:h_end, w_start:w_end, 0:3] = component.image.img[:, :, 0:3]

@@ -15,5 +15,5 @@ class Wizard:
     def execute(self):
         self.mosaic.transform(self.tile_size)
         new_image = self.mosaic.create(self.mosaic.match())
-        filename = mktemp(dir=join(dirname(__file__), pardir, pardir, "resources")) + ".png"
+        filename = mktemp(dir=join(dirname(__file__), pardir, pardir, "output")) + ".png"
         imageio.imwrite(filename, new_image.img)

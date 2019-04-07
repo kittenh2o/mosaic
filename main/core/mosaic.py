@@ -41,8 +41,12 @@ class Mosaic:
         result = list()
         t_w, t_h = self.tile_size[0], self.tile_size[1]
 
-        for w_start in range(0, self.original_image.width(), t_w):
-            for h_start in range(0, self.original_image.height(), t_h):
+        Nw = self.original_image.width()//t_w
+        Nh = self.original_image.height()//t_h
+
+        for i in range(Nw):
+            for j in range(Nh):
+                w_start, h_start = i * t_w, j * t_h
                 segment = Image(data=self.original_image.img[h_start:h_start + t_h, w_start:w_start + t_w])
                 matched_tile = self.find_best_tile(segment)
                 result.append(Component(image=matched_tile, w_start=w_start, h_start=h_start))
