@@ -1,12 +1,10 @@
-import sys
 import unittest
-from os.path import dirname
 
-sys.path.insert(0, dirname(dirname(__file__)))
-from core.process_pic import Image
+from main.core.process_pic import Image
 
-class TestReadImage(unittest.TestCase):
-    
+
+class TestImage(unittest.TestCase):
+
     def test_read(self):
         uris = [
             "https://res.cloudinary.com/dwf6x1ohn/image/upload/v1534347950/bgnppredgmslafb5pkpw.jpg",
@@ -22,8 +20,9 @@ class TestReadImage(unittest.TestCase):
             image = Image(uri)
             self.assertEqual(size[0], image.width())
             self.assertEqual(size[1], image.height())
+            self.assertEqual(size[0] * size[1], image.size())
 
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestReadImage)
-    unittest.TextTestRunner().run(suite)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestImage)
+    unittest.TextTestRunner(verbosity=2).run(suite)
