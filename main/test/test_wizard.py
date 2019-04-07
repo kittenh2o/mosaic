@@ -20,6 +20,5 @@ class TestWizard(TestCase):
     def test_execute2(self):
         tile_uris = glob.glob(join(dirname(__file__), "image_resources", "*.*"))
         wizard = Wizard("https://res.cloudinary.com/dwf6x1ohn/image/upload/v1534347950/bgnppredgmslafb5pkpw.jpg",
-                        tile_uris)
+                        tile_uris, tile_size=(10, 10))
         wizard.execute()
-

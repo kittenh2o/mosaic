@@ -9,7 +9,6 @@ class Mosaic:
         self.original_image = Image(uri)
         self.tile_library = TileResource()
         self.tile_size = (self.original_image.width() // 10, self.original_image.height() // 10)
-        self.new_image = Image(data=numpy.ndarray(shape=self.original_image.img.shape))
 
     def add_tile(self, uri: str):
         self.tile_library.add_tile(Image(uri))
@@ -18,7 +17,7 @@ class Mosaic:
         for uri in uris:
             self.add_tile(uri)
 
-    def transform(self, tile_size: tuple = None):
+    def prepare_resources(self, tile_size: tuple = None):
         if tile_size:
             self.tile_size = tile_size
 
@@ -28,7 +27,9 @@ class Mosaic:
         diff_w, diff_h = w % self.tile_size[0], h % self.tile_size[1]
 
         if diff_w or diff_h:
-            ImageProcessor.resize(image=self.original_image, size=(w + diff_w, h + diff_h))
+            new_w = w - diff_w + self.tile_size[0]
+            new_h = h - diff_h + self.tile_size[1]
+            ImageProcessor.resize(image=self.original_image, size=(new_w, new_h))
 
     def find_best_tile(self, segment: Image) -> Image:
         min_ind = numpy.argmin(
@@ -41,11 +42,11 @@ class Mosaic:
         result = list()
         t_w, t_h = self.tile_size[0], self.tile_size[1]
 
-        Nw = self.original_image.width()//t_w
-        Nh = self.original_image.height()//t_h
+        nw = self.original_image.width()//t_w
+        nh = self.original_image.height()//t_h
 
-        for i in range(Nw):
-            for j in range(Nh):
+        for i in range(nw):
+            for j in range(nh):
                 w_start, h_start = i * t_w, j * t_h
                 segment = Image(data=self.original_image.img[h_start:h_start + t_h, w_start:w_start + t_w])
                 matched_tile = self.find_best_tile(segment)
@@ -55,8 +56,11 @@ class Mosaic:
 
     def create(self, components: list) -> Image:
         for component in components:
-            ImageProcessor.replace(self.new_image, component)
+            ImageProcessor.replace(self.original_image, component)
 
-        return self.new_image
+        return self.original_image
 
-
+    def make_mosaic(self, tile_size: tuple = None):
+        self.prepare_resources(tile_size)
+        components = self.match()
+        return self.create(components)

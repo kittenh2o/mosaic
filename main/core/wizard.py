@@ -13,7 +13,6 @@ class Wizard:
         self.mosaic.add_tiles(tiles_uris)
 
     def execute(self):
-        self.mosaic.transform(self.tile_size)
-        new_image = self.mosaic.create(self.mosaic.match())
+        new_image = self.mosaic.make_mosaic(self.tile_size)
         filename = mktemp(dir=join(dirname(__file__), pardir, pardir, "output")) + ".png"
         imageio.imwrite(filename, new_image.img)
