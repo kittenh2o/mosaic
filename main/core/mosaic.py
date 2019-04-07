@@ -1,6 +1,7 @@
-from main.core.process_pic import Image, ImageProcessor
-from main.core.tiles import TileResource
 import numpy
+
+from main.core.process_pic import Image, ImageProcessor, Component
+from main.core.tiles import TileResource
 
 
 class Mosaic:
@@ -8,6 +9,7 @@ class Mosaic:
         self.original_image = Image(uri)
         self.tile_library = TileResource()
         self.tile_size = (self.original_image.width() // 10, self.original_image.height() // 10)
+        self.new_image = Image(data=numpy.ndarray(shape=self.original_image.img.shape))
 
     def add_tile(self, uri: str):
         self.tile_library.add_tile(Image(uri))
@@ -30,8 +32,9 @@ class Mosaic:
 
     def find_best_tile(self, segment: Image) -> Image:
         min_ind = numpy.argmin(
-            (ImageProcessor.diff_with_rgb(segment, rgb) for rgb in self.tile_library.tiles_rgb)
+            [ImageProcessor.diff_with_rgb(segment, rgb) for rgb in self.tile_library.tiles_rgb]
         )
+
         return self.tile_library.library[min_ind]
 
     def match(self) -> list:
@@ -40,8 +43,16 @@ class Mosaic:
 
         for w_start in range(0, self.original_image.width(), t_w):
             for h_start in range(0, self.original_image.height(), t_h):
-                segment = Image(data=self.original_image.get_data()[w_start:w_start + t_w][h_start:h_start + t_h])
+                segment = Image(data=self.original_image.img[h_start:h_start + t_h, w_start:w_start + t_w])
                 matched_tile = self.find_best_tile(segment)
-                result.append(matched_tile)
+                result.append(Component(image=matched_tile, w_start=w_start, h_start=h_start))
 
         return result
+
+    def create(self, components: list) -> Image:
+        for component in components:
+            ImageProcessor.replace(self.new_image, component)
+
+        return self.new_image
+
+

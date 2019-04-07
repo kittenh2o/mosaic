@@ -1,4 +1,4 @@
-from main.core.process_pic import Image, ImageProcessor
+from main.core.process_pic import ImageProcessor, Image
 
 
 class TileResource:
@@ -21,3 +21,6 @@ class TileResource:
         self.tiles_rgb = [
             ImageProcessor.eval_rgb(image) for image in self.library
         ]
+
+
+
