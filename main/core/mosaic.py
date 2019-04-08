@@ -1,11 +1,12 @@
 import numpy
-
+import logging
 from main.core.process_pic import Image, ImageProcessor, Component
 from main.core.tiles import TileResource
+import multiprocessing
 
 
 class Mosaic:
-    ''' Main module for converting image into mosaic'''
+    """ Main module for converting image into mosaic"""
     def __init__(self, uri: str):
         self.original_image = Image(uri)
         self.tile_library = TileResource()
@@ -41,31 +42,41 @@ class Mosaic:
 
         return self.tile_library.library[min_ind]
 
-    def _match(self) -> list:
+    def _get_component(self, segment: Image, w_start: int, h_start: int):
+        # print("Process {0}:: get_component".format(os.getpid()))
+        return Component(image=self._find_best_tile(segment), w_start=w_start, h_start=h_start)
+
+    def _match_and_create(self) -> None:
         """ match original image with tiles"""
-        result = list()
         t_w, t_h = self.tile_size[0], self.tile_size[1]
 
         nw = self.original_image.width()//t_w
         nh = self.original_image.height()//t_h
 
+        results = list()
+
+        pool = multiprocessing.Pool(processes=4)
+
         for i in range(nw):
             for j in range(nh):
                 w_start, h_start = i * t_w, j * t_h
                 segment = Image(data=self.original_image.img[h_start:h_start + t_h, w_start:w_start + t_w])
-                matched_tile = self._find_best_tile(segment)
-                result.append(Component(image=matched_tile, w_start=w_start, h_start=h_start))
+                res = pool.apply_async(self._get_component, (segment, w_start, h_start))
+                results.append(res)
 
-        return result
+        pool.close()
+        pool.join()
 
-    def _create(self, components: list) -> Image:
+        logging.log(logging.DEBUG, "match finished")
+
+        components = (x.get() for x in results)
         for component in components:
             ImageProcessor.replace(self.original_image, component)
 
-        return self.original_image
+        logging.log(logging.DEBUG, "_match_and_create finished")
 
     def make_mosaic(self, tile_size: tuple = None) -> Image:
         """ Interface for users to call"""
         self._prepare_resources(tile_size)
-        components = self._match()
-        return self._create(components)
+        self._match_and_create()
+        return self.original_image

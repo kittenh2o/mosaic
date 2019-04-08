@@ -1,6 +1,8 @@
 from unittest import TestCase
 from os.path import dirname, join
 from main.core.mosaic import Mosaic
+from copy import deepcopy
+import numpy
 
 
 target_uri = join(dirname(__file__), "image_resources", "target.png")
@@ -27,17 +29,13 @@ class TestMosaic(TestCase):
         w_tile = mosaic_manager.tile_size[0]
         self.assertEqual(w_original, 10 * w_tile)
 
-    def test_match(self):
-        mosaic_manager = Mosaic(red_uri)
-        mosaic_manager.add_tiles([red_uri, green_uri, blue_uri])
-        mosaic_manager._prepare_resources()
-        components = mosaic_manager._match()
-        for component in components:
-            self.assertEqual(red_uri, component.image._uri)
-
-    def test_create(self):
+    def test_make_mosaic(self):
         mosaic_manager = Mosaic(target_uri)
         mosaic_manager.add_tiles(([red_uri, green_uri, blue_uri]))
         mosaic_manager._prepare_resources()
-        img = mosaic_manager._create(mosaic_manager._match())
-        self.assertIsNotNone(img)
+
+        original_data = deepcopy(mosaic_manager.original_image.img)
+
+        mosaic_manager._match_and_create()
+
+        self.assertFalse((original_data==mosaic_manager.original_image.img).all())
