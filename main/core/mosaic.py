@@ -1,8 +1,11 @@
-import numpy
 import logging
+from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
+
+import numpy
+
 from main.core.process_pic import Image, ImageProcessor, Component
 from main.core.tiles import TileResource
-import multiprocessing
 
 
 class Mosaic:
@@ -16,8 +19,8 @@ class Mosaic:
         self.tile_library.add_tile(Image(uri))
 
     def add_tiles(self, uris: list):
-        for uri in uris:
-            self.add_tile(uri)
+        with ThreadPool(4) as pool:
+            pool.map(self.add_tile, uris)
 
     def _prepare_resources(self, tile_size: tuple = None):
         """ enlarge/shrink tiles to the given or default size and adjust original image accordingly"""
@@ -53,23 +56,18 @@ class Mosaic:
         nw = self.original_image.width()//t_w
         nh = self.original_image.height()//t_h
 
-        results = list()
+        with Pool(processes=4) as pool:
+            results = list()
+            for i in range(nw):
+                for j in range(nh):
+                    w_start, h_start = i * t_w, j * t_h
+                    segment = Image(data=self.original_image.img[h_start:h_start + t_h, w_start:w_start + t_w])
+                    res = pool.apply_async(self._get_component, (segment, w_start, h_start))
+                    results.append(res)
 
-        pool = multiprocessing.Pool(processes=4)
-
-        for i in range(nw):
-            for j in range(nh):
-                w_start, h_start = i * t_w, j * t_h
-                segment = Image(data=self.original_image.img[h_start:h_start + t_h, w_start:w_start + t_w])
-                res = pool.apply_async(self._get_component, (segment, w_start, h_start))
-                results.append(res)
-
-        pool.close()
-        pool.join()
-
+            components = [x.get() for x in results]
         logging.log(logging.DEBUG, "match finished")
 
-        components = [x.get() for x in results]
         for component in components:
             ImageProcessor.replace(self.original_image, component)
 
