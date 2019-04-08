@@ -69,7 +69,7 @@ class Mosaic:
 
         logging.log(logging.DEBUG, "match finished")
 
-        components = (x.get() for x in results)
+        components = [x.get() for x in results]
         for component in components:
             ImageProcessor.replace(self.original_image, component)
 
