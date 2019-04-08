@@ -1,26 +1,30 @@
 from main.core.process_pic import ImageProcessor, Image
+from multiprocessing.dummy import Pool
 
 
 class TileResource:
+    """ A resource class to store all tiles"""
     def __init__(self, images=None):
         if images is None:
             images = list()
         self.library = images
-        self.tiles_rgb = list()
+        self.tiles_rgb = None
+        self.tile_size = None
 
     def add_tile(self, image: Image):
         self.library.append(image)
 
+    def _resize_and_calc_rgb(self, image: Image) -> dict:
+        ImageProcessor.resize(image, self.tile_size)
+        return ImageProcessor.eval_rgb(image)
+
     def prepare(self, target_size: tuple):
-        for image in self.library:
-            ImageProcessor.resize(image, target_size)
+        """ prepare tile resources"""
+        self.tile_size = target_size
 
-        self._calc_tiles_rgb()
+        with Pool(4) as pool:
+            results = pool.map(self._resize_and_calc_rgb, self.library)
 
-    def _calc_tiles_rgb(self):
-        self.tiles_rgb = [
-            ImageProcessor.eval_rgb(image) for image in self.library
-        ]
-
+        self.tiles_rgb = results
 
 
